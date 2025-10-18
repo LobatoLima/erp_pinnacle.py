@@ -1,5 +1,6 @@
 import streamlit as st
 import sqlite3
+from datetime import datetime
 
 # --- BANCO DE DADOS ---
 def criar_banco():
@@ -43,7 +44,7 @@ def salvar_produto(codigo_produto, cor, descricao_produto, tamanho, modelagem, g
     c = conn.cursor()
     c.execute('''
         INSERT INTO produtos (codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, custo, venda, estoque))
     conn.commit()
     conn.close()
@@ -59,7 +60,8 @@ def listar_produtos():
 def salvar_cliente(nome, cpf, telefone, email, nascimento):
     conn = sqlite3.connect('erp.db')
     c = conn.cursor()
-    c.execute('INSERT INTO clientes (nome, cpf, telefone, email, nascimento) VALUES (?, ?, ?, ?, ?)', (nome, cpf, telefone, email, nascimento))
+    c.execute('INSERT INTO clientes (nome, cpf, telefone, email, nascimento) VALUES (?, ?, ?, ?, ?)', 
+              (nome, cpf, telefone, email, nascimento))
     conn.commit()
     conn.close()
 
@@ -116,30 +118,37 @@ def main():
     elif escolha == "Clientes":
         st.subheader("👥 Cadastro de Clientes")
 
-from datetime import datetime
+        with st.form("form_cliente"):
+            nome = st.text_input("Nome")
+            cpf = st.text_input("CPF")
+            telefone = st.text_input("Telefone")
+            email = st.text_input("E-mail")
+            nascimento_str = st.text_input("Nascimento (formato: DD/MM/AAAA)")
 
-with st.form("form_cliente"):
-    nome = st.text_input("Nome")
-    cpf = st.text_input("CPF")
-    telefone = st.text_input("Telefone")
-    email = st.text_input("E-mail")
-    nascimento_str = st.text_input("Nascimento (formato: DD/MM/AAAA)")
-
-    enviar = st.form_submit_button("Salvar Cliente")
-    if enviar:
-        try:
-            nascimento = datetime.strptime(nascimento_str, "%d/%m/%Y").date()
-            salvar_cliente(nome, cpf, telefone, email, nascimento)
-            st.success("✅ Cliente salvo com sucesso!")
-        except ValueError:
-            st.error("⚠️ Data de nascimento inválida! Use o formato DD/MM/AAAA.")
-
+            enviar = st.form_submit_button("Salvar Cliente")
+            if enviar:
+                try:
+                    nascimento = datetime.strptime(nascimento_str, "%d/%m/%Y").date()
+                    salvar_cliente(nome, cpf, telefone, email, nascimento)
+                    st.success("✅ Cliente salvo com sucesso!")
+                except ValueError:
+                    st.error("⚠️ Data de nascimento inválida! Use o formato DD/MM/AAAA.")
 
         st.divider()
         st.subheader("📋 Lista de Clientes")
         data = listar_clientes()
         if data:
-            st.dataframe(data, use_container_width=True)
+            # Formatar data de nascimento antes de exibir
+            clientes_formatados = []
+            for linha in data:
+                linha = list(linha)
+                if linha[5]:  # índice 5 é a coluna nascimento
+                    try:
+                        linha[5] = datetime.strptime(linha[5], "%Y-%m-%d").strftime("%d/%m/%Y")
+                    except:
+                        pass
+                clientes_formatados.append(linha)
+            st.dataframe(clientes_formatados, use_container_width=True)
         else:
             st.info("Nenhum cliente cadastrado.")
 
