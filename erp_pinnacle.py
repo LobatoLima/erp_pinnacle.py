@@ -89,7 +89,7 @@ def main():
 
         with st.form("form_produto"):
             codigo_produto = st.text_input("Código Produto")
-            codigo_cor = st.text_input("Cor")
+            cor = st.radio("Cor", ["OFF WHITE", "PRETA", "BEGE CLARA"])
             descricao_produto = st.text_input("Descrição Produto")
             tamanho = st.text_input("Tamanho")
             modelagem = st.text_input("Modelagem")
@@ -102,7 +102,7 @@ def main():
 
             enviar = st.form_submit_button("Salvar Produto")
             if enviar:
-                salvar_produto(codigo_produto, codigo_cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
+                salvar_produto(codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
                 st.success("✅ Produto salvo com sucesso!")
 
         st.divider()
