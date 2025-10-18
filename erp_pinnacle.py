@@ -59,7 +59,7 @@ def listar_produtos():
 def salvar_cliente(nome, cpf, telefone, email, nascimento):
     conn = sqlite3.connect('erp.db')
     c = conn.cursor()
-    c.execute('INSERT INTO clientes (nome, cpf, telefone, email, nascimento) VALUES (?, ?, ?, ?)', (nome, cpf, telefone, email, nascimento))
+    c.execute('INSERT INTO clientes (nome, cpf, telefone, email, nascimento) VALUES (?, ?, ?, ?, ?)', (nome, cpf, telefone, email, nascimento))
     conn.commit()
     conn.close()
 
@@ -91,7 +91,6 @@ def main():
             codigo_produto = st.text_input("Código Produto")
             descricao_produto = st.text_input("Descrição Produto")
             cor = st.radio("Cor", ["OFF WHITE", "PRETA", "BEGE CLARA"])
-            descricao_produto = st.text_input("Descrição Produto")
             tamanho = st.radio("Tamanho", ["P", "M", "G"])
             modelagem = st.radio("Modelagem", ["SLIM", "REGULAR", "OVER"])
             genero = st.radio("Gênero", ["MASCULINO", "FEMININO", "UNISSEX"])
@@ -117,18 +116,24 @@ def main():
     elif escolha == "Clientes":
         st.subheader("👥 Cadastro de Clientes")
 
-        with st.form("form_cliente"):
-            nome = st.text_input("Nome")
-            cpf = st.text_input("CPF")
-            telefone = st.text_input("Telefone")
-            email = st.text_input("E-mail")
-            nascimento = st.text_input("Nascimento (formato: DD/MM/AAAA)")
-            
+from datetime import datetime
 
-            enviar = st.form_submit_button("Salvar Cliente")
-            if enviar:
-                salvar_cliente(nome, cpf, telefone, email)
-                st.success("✅ Cliente salvo com sucesso!")
+with st.form("form_cliente"):
+    nome = st.text_input("Nome")
+    cpf = st.text_input("CPF")
+    telefone = st.text_input("Telefone")
+    email = st.text_input("E-mail")
+    nascimento_str = st.text_input("Nascimento (formato: DD/MM/AAAA)")
+
+    enviar = st.form_submit_button("Salvar Cliente")
+    if enviar:
+        try:
+            nascimento = datetime.strptime(nascimento_str, "%d/%m/%Y").date()
+            salvar_cliente(nome, cpf, telefone, email, nascimento)
+            st.success("✅ Cliente salvo com sucesso!")
+        except ValueError:
+            st.error("⚠️ Data de nascimento inválida! Use o formato DD/MM/AAAA.")
+
 
         st.divider()
         st.subheader("📋 Lista de Clientes")
