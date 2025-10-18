@@ -91,7 +91,7 @@ def main():
             codigo_produto = st.text_input("Código Produto")
             cor = st.radio("Cor", ["OFF WHITE", "PRETA", "BEGE CLARA"])
             descricao_produto = st.text_input("Descrição Produto")
-            tamanho = st.text_input("Tamanho")
+            tamanho = st.radio("Tamanho", ["P", "M", "G"])
             modelagem = st.text_input("Modelagem")
             genero = st.radio("Gênero", ["MASCULINO", "FEMININO", "UNISSEX"])
             grupo = st.radio("Grupo", ["T-SHIRT MC","CALCA","BERMUDA","CASACO","CAMISA MC"])
