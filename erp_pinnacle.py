@@ -77,7 +77,7 @@ def main():
     criar_banco()
 
     st.title("🧾 ERP Pinnacle Web")
-    menu = ["Início", "Produtos", "Clientes"]
+    menu = ["Início", "Produtos", "Clientes", "Compra"]
     escolha = st.sidebar.selectbox("Menu", menu)
 
     if escolha == "Início":
@@ -89,10 +89,11 @@ def main():
 
         with st.form("form_produto"):
             codigo_produto = st.text_input("Código Produto")
+            descricao_produto = st.text_input("Descrição Produto")
             cor = st.radio("Cor", ["OFF WHITE", "PRETA", "BEGE CLARA"])
             descricao_produto = st.text_input("Descrição Produto")
             tamanho = st.radio("Tamanho", ["P", "M", "G"])
-            modelagem = st.text_input("Modelagem")
+            modelagem = st.radio("Modelagem", ["SLIM", "REGULAR", "OVER"])
             genero = st.radio("Gênero", ["MASCULINO", "FEMININO", "UNISSEX"])
             grupo = st.radio("Grupo", ["T-SHIRT MC","CALCA","BERMUDA","CASACO","CAMISA MC"])
             subgrupo = st.radio("Subgrupo", ["SLIM","OVER","REGULAR"])
