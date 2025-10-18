@@ -10,7 +10,7 @@ def criar_banco():
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             codigo_produto TEXT,
-            codigo_cor TEXT,
+            cor TEXT,
             descricao_produto TEXT,
             tamanho TEXT,
             modelagem TEXT,
@@ -29,7 +29,8 @@ def criar_banco():
             nome TEXT,
             cpf TEXT,
             telefone TEXT,
-            email TEXT
+            email TEXT,
+            nascimento DATE
         )
     ''')
 
@@ -37,13 +38,13 @@ def criar_banco():
     conn.close()
 
 # --- FUNÇÕES ---
-def salvar_produto(codigo_produto, codigo_cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, custo, venda, estoque):
+def salvar_produto(codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, custo, venda, estoque):
     conn = sqlite3.connect('erp.db')
     c = conn.cursor()
     c.execute('''
-        INSERT INTO produtos (codigo_produto, codigo_cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
+        INSERT INTO produtos (codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (codigo_produto, codigo_cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, custo, venda, estoque))
+    ''', (codigo_produto, cor, descricao_produto, tamanho, modelagem, genero, grupo, subgrupo, custo, venda, estoque))
     conn.commit()
     conn.close()
 
@@ -55,10 +56,10 @@ def listar_produtos():
     conn.close()
     return data
 
-def salvar_cliente(nome, cpf, telefone, email):
+def salvar_cliente(nome, cpf, telefone, email, nascimento):
     conn = sqlite3.connect('erp.db')
     c = conn.cursor()
-    c.execute('INSERT INTO clientes (nome, cpf, telefone, email) VALUES (?, ?, ?, ?)', (nome, cpf, telefone, email))
+    c.execute('INSERT INTO clientes (nome, cpf, telefone, email, nascimento) VALUES (?, ?, ?, ?)', (nome, cpf, telefone, email, nascimento))
     conn.commit()
     conn.close()
 
@@ -81,14 +82,14 @@ def main():
 
     if escolha == "Início":
         st.subheader("Bem-vindo ao ERP Pinnacle Web 👋")
-        st.write("Gerencie produtos, clientes e, futuramente, compras e vendas direto do navegador.")
+        st.write("Comece agora à construção da estratégia e planejamento da sua empresa e boas vendas!")
     
     elif escolha == "Produtos":
         st.subheader("📦 Cadastro de Produtos")
 
         with st.form("form_produto"):
             codigo_produto = st.text_input("Código Produto")
-            codigo_cor = st.text_input("Código Cor")
+            codigo_cor = st.text_input("Cor")
             descricao_produto = st.text_input("Descrição Produto")
             tamanho = st.text_input("Tamanho")
             modelagem = st.text_input("Modelagem")
@@ -120,6 +121,8 @@ def main():
             cpf = st.text_input("CPF")
             telefone = st.text_input("Telefone")
             email = st.text_input("E-mail")
+            nascimento = st.text_input("Nascimento (formato: DD/MM/AAAA)")
+            
 
             enviar = st.form_submit_button("Salvar Cliente")
             if enviar:
