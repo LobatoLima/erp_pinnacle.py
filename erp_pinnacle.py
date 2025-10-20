@@ -92,7 +92,7 @@ def atualizar_produto(id_produto, codigo_produto, cor, descricao_produto, tamanh
 
 def main():
     st.set_page_config(page_title="ERP Pinnacle Web", page_icon="🧾", layout="centered")
-    criar_banco()
+    criar_tabela()
 
     st.title("🧾 ERP Pinnacle Web")
     menu = ["Início", "Cadastrar Produto", "Lista de Produtos", "Clientes"]
