@@ -54,10 +54,11 @@ def salvar_cliente(nome, cpf, sexo, aniversario):
     conn = conectar()
     c = conn.cursor()
     try:
+        anivers_iso = aniversario.isoformat() if hasattr(aniversario, "isoformat") else aniversario
         c.execute('''
             INSERT INTO clientes (nome, cpf, sexo, aniversario)
             VALUES (?, ?, ?, ?)
-        ''', (nome, cpf, sexo, aniversario))
+        ''', (nome, cpf, sexo, anivers_iso))
         conn.commit()
         st.success("✅ Cliente cadastrado com sucesso!")
     except sqlite3.IntegrityError:
@@ -93,13 +94,16 @@ def atualizar_cliente(id_cliente, nome, cpf, sexo, aniversario):
     conn = conectar()
     c = conn.cursor()
     try:
+        anivers_iso = aniversario.isoformat() if hasattr(aniversario, "isoformat") else aniversario
         c.execute('''
             UPDATE clientes
             SET nome = ?, cpf = ?, sexo = ?, aniversario = ?
             WHERE id = ?
-        ''', (nome, cpf, sexo, aniversario, id_cliente))
+        ''', (nome, cpf, sexo, anivers_iso, id_cliente))
         conn.commit()
         st.success("✅ Cliente atualizado com sucesso!")
+    except sqlite3.IntegrityError:
+        st.error("⚠️ CPF já cadastrado por outro cliente!")
     except Exception as e:
         st.error(f"Erro ao atualizar cliente: {e}")
     finally:
@@ -149,9 +153,35 @@ def excluir_produto(id_produto):
     conn.close()
     st.success("🗑️ Produto excluído com sucesso!")
 
+def atualizar_produto(id_produto, codigo_produto, cor, descricao_produto, tamanho, modelagem, genero,
+                      grupo, subgrupo, preco_custo, preco_venda, estoque):
+    conn = conectar()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            UPDATE produtos
+            SET codigo_produto=?, cor=?, descricao_produto=?, tamanho=?, modelagem=?, genero=?, 
+                grupo=?, subgrupo=?, preco_custo=?, preco_venda=?, estoque=?
+            WHERE id=?
+        ''', (codigo_produto, cor, descricao_produto, tamanho, modelagem, genero,
+              grupo, subgrupo, preco_custo, preco_venda, estoque, id_produto))
+        conn.commit()
+        st.success("✏️ Produto atualizado com sucesso!")
+    except Exception as e:
+        st.error(f"Erro ao atualizar produto: {e}")
+    finally:
+        conn.close()
+
 # ===============================
 #  Interface Streamlit
 # ===============================
+
+def safe_index(value, options, default=0):
+    """Retorna index seguro (evita ValueError se value não estiver em options)."""
+    try:
+        return options.index(value)
+    except Exception:
+        return default
 
 def main():
     st.set_page_config(page_title="ERP Pinnacle Web", page_icon="🧾", layout="centered")
@@ -183,15 +213,57 @@ def main():
         estoque = st.number_input("Estoque", min_value=0, step=1)
 
         if st.button("Salvar Produto"):
-            salvar_produto(codigo_produto, cor, descricao_produto, tamanho, modelagem,
-                           genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
+            if codigo_produto.strip() == "" or descricao_produto.strip() == "":
+                st.error("Código e descrição são obrigatórios.")
+            else:
+                salvar_produto(codigo_produto, cor, descricao_produto, tamanho, modelagem,
+                               genero, grupo, subgrupo, preco_custo, preco_venda, estoque)
 
-    # Lista de Produtos
+    # Lista de Produtos (com editar/excluir)
     elif escolha == "Lista de Produtos":
         st.subheader("📋 Lista de Produtos")
         produtos = listar_produtos()
         if not produtos.empty:
-            st.dataframe(produtos)
+            for _, row in produtos.iterrows():
+                with st.expander(f"🧾 {row['descricao_produto']} ({row['codigo_produto']})"):
+                    st.write(f"**Cor:** {row['cor']}")
+                    st.write(f"**Tamanho:** {row['tamanho']} | **Modelagem:** {row['modelagem']}")
+                    st.write(f"**Gênero:** {row['genero']} | **Grupo:** {row['grupo']} | **Subgrupo:** {row['subgrupo']}")
+                    st.write(f"💰 **Custo:** R${row['preco_custo']:.2f} | **Venda:** R${row['preco_venda']:.2f}")
+                    st.write(f"📦 **Estoque:** {row['estoque']}")
+
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button(f"✏️ Editar Produto {row['id']}", key=f"editp_btn_{row['id']}"):
+                            # abrir form de edição abaixo do expander
+                            with st.form(f"editar_prod_{row['id']}"):
+                                novo_codigo = st.text_input("Código", value=row['codigo_produto'], key=f"pcod_{row['id']}")
+                                nova_descricao = st.text_input("Descrição", value=row['descricao_produto'], key=f"pdesc_{row['id']}")
+                                cores = ["OFF WHITE", "PRETA", "BEGE CLARA"]
+                                novo_cor = st.radio("Cor", cores, index=safe_index(row["cor"], cores), key=f"pcor_{row['id']}")
+                                tamanhos = ["P", "M", "G"]
+                                novo_tamanho = st.radio("Tamanho", tamanhos, index=safe_index(row["tamanho"], tamanhos), key=f"ptam_{row['id']}")
+                                modelagens = ["SLIM", "REGULAR", "OVER"]
+                                nova_modelagem = st.radio("Modelagem", modelagens, index=safe_index(row["modelagem"], modelagens), key=f"pmod_{row['id']}")
+                                generos = ["MASCULINO", "FEMININO", "UNISSEX"]
+                                novo_genero = st.selectbox("Gênero", generos, index=safe_index(row["genero"], generos), key=f"pgen_{row['id']}")
+                                grupos = ["T-SHIRT MC", "CALCA", "BERMUDA", "CASACO", "CAMISA MC"]
+                                novo_grupo = st.selectbox("Grupo", grupos, index=safe_index(row["grupo"], grupos), key=f"pgrp_{row['id']}")
+                                subgrupos = ["SLIM", "REGULAR", "OVER"]
+                                novo_subgrupo = st.selectbox("Sub Grupo", subgrupos, index=safe_index(row["subgrupo"], subgrupos), key=f"psub_{row['id']}")
+                                novo_preco_custo = st.number_input("Preço de Custo", min_value=0.0, step=0.01, value=row['preco_custo'], key=f"pcusto_{row['id']}")
+                                novo_preco_venda = st.number_input("Preço de Venda", min_value=0.0, step=0.01, value=row['preco_venda'], key=f"pvenda_{row['id']}")
+                                novo_estoque = st.number_input("Estoque", min_value=0, step=1, value=row['estoque'], key=f"pestoq_{row['id']}")
+
+                                if st.form_submit_button("Salvar Alterações", key=f"psave_{row['id']}"):
+                                    atualizar_produto(row['id'], novo_codigo, novo_cor, nova_descricao, novo_tamanho, nova_modelagem,
+                                                      novo_genero, novo_grupo, novo_subgrupo, novo_preco_custo, novo_preco_venda, novo_estoque)
+                                    st.experimental_rerun()
+
+                    with col2:
+                        if st.button(f"🗑️ Excluir Produto {row['id']}", key=f"delp_btn_{row['id']}"):
+                            excluir_produto(row['id'])
+                            st.experimental_rerun()
         else:
             st.info("Nenhum produto cadastrado.")
 
@@ -205,41 +277,48 @@ def main():
         aniversario = st.date_input("Data de Aniversário", value=date(2000, 1, 1))
 
         if st.button("Salvar Cliente"):
-            salvar_cliente(nome, cpf, sexo, aniversario)
+            if nome.strip() == "" or cpf.strip() == "":
+                st.error("Nome e CPF são obrigatórios.")
+            else:
+                salvar_cliente(nome, cpf, sexo, aniversario)
 
-    # Lista de Clientes
+    # Lista de Clientes (com editar/excluir)
     elif escolha == "Lista de Clientes":
         st.subheader("📋 Lista de Clientes")
         clientes = listar_clientes()
 
         if not clientes.empty:
             for _, row in clientes.iterrows():
+                aniversario_display = row["aniversario"] if row["aniversario"] else ""
                 with st.expander(f"🧍 {row['nome']} ({row['cpf']})"):
                     st.write(f"**Sexo:** {row['sexo']}")
-                    st.write(f"**Aniversário:** {row['aniversario']}")
+                    st.write(f"**Aniversário:** {aniversario_display}")
 
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button(f"🗑️ Excluir {row['id']}"):
+                        if st.button(f"🗑️ Excluir Cliente {row['id']}", key=f"delc_btn_{row['id']}"):
                             excluir_cliente(row['id'])
-                            st.rerun()
+                            st.experimental_rerun()
                     with col2:
-                        if st.button(f"✏️ Editar {row['id']}"):
-                            with st.form(f"form_editar_{row['id']}"):
-                                nome_edit = st.text_input("Nome", row["nome"])
-                                cpf_edit = st.text_input("CPF", row["cpf"])
-                                sexo_edit = st.radio("Sexo", ["Masculino", "Feminino", "Outro"], 
-                                                     index=["Masculino", "Feminino", "Outro"].index(row["sexo"]))
-                                aniversario_edit = st.date_input("Aniversário", value=date.fromisoformat(row["aniversario"]))
-                                salvar_edicao = st.form_submit_button("Salvar Alterações")
-
+                        if st.button(f"✏️ Editar Cliente {row['id']}", key=f"editc_btn_{row['id']}"):
+                            # abrir form de edição
+                            with st.form(f"form_editar_cliente_{row['id']}"):
+                                nome_edit = st.text_input("Nome", value=row["nome"], key=f"cnome_{row['id']}")
+                                cpf_edit = st.text_input("CPF", value=row["cpf"], key=f"ccpf_{row['id']}")
+                                sex_options = ["Masculino", "Feminino", "Outro"]
+                                sexo_edit = st.radio("Sexo", sex_options, index=safe_index(row["sexo"], sex_options), key=f"csexo_{row['id']}")
+                                # aniversario pode estar armazenado como ISO string
+                                try:
+                                    init_date = date.fromisoformat(row["aniversario"]) if row["aniversario"] else date(2000,1,1)
+                                except Exception:
+                                    init_date = date(2000,1,1)
+                                aniversario_edit = st.date_input("Aniversário", value=init_date, key=f"caniv_{row['id']}")
+                                salvar_edicao = st.form_submit_button("Salvar Alterações", key=f"csave_{row['id']}")
                                 if salvar_edicao:
                                     atualizar_cliente(row["id"], nome_edit, cpf_edit, sexo_edit, aniversario_edit)
-                                    st.rerun()
+                                    st.experimental_rerun()
         else:
             st.info("Nenhum cliente cadastrado.")
 
 if __name__ == "__main__":
     main()
-
-
